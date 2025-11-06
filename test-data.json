@@ -1,0 +1,37 @@
+{
+  "labId": "68c455e6a5fbc303e31d428b",
+  "labTitle": "NETWORK NAMESPACE INSPECTING (K8S)",
+  "labGroupID": "68c455c0a5fbc303e31d4269",
+  "moduleID": "68c455e6a5fbc303e31d4287",
+  "duration": 60,
+  "activatedAt": "2025-11-06T06:03:31.559Z",
+  "counterID": "68c455e6a5fbc303e31d428b",
+  "configId": "e8ceb72a-f12b-4565-a0fe-49bfd49wkf14",
+  "workerConfigId": "e8ceb72a-f12b-4565-a0fe-49bfd49wkf15",
+  "lab_request_id": "9f3077ea-8d03-44f0-a6b3-c9697b43427c",
+  "user_id": "675993586c0850de6534d90d",
+  "terminal_url": "https://675993586c0850de6534d90d_abb17775.terminal-stag.poridhi.io",
+  "validation": 1762412611563,
+  "vm": {
+    "name": "k3s-master-1-9f3077ea-8018e1",
+    "network_id": "4eeee504-a9cc-46eb-9121-32fb9dd51975",
+    "netbird_ip": "100.125.174.16"
+  },
+  "vscode_domain": "675993586c0850de6534d90d_136ee932.vscode-stag.poridhi.io",
+  "puku_domain": "675993586c0850de6534d90d_9551ff4b.puku-editor-stag.poridhi.io",
+  "worker_nodes": [
+    {
+      "name": "k3s-worker-41516a2d-43ae1f",
+      "worker_lab_request_id": "41516a2d-8073-4601-9907-d98d8af25b25",
+      "network_id": "4eeee504-a9cc-46eb-9121-32fb9dd51975",
+      "netbird_ip": "100.125.42.245"
+    }
+  ],
+  "loadBalancers": [
+    {
+      "id": "02849259",
+      "domain": "675993586c0850de6534d90d_02849259.lb-stag.poridhi.io",
+      "port": "4000"
+    }
+  ]
+}

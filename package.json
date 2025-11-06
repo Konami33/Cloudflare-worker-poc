@@ -1,0 +1,27 @@
+{
+  "name": "cloudflare-worker-labs-service",
+  "version": "1.0.0",
+  "description": "Cloudflare Worker service to manage cloud lab state in D1 Database",
+  "main": "src/index.ts",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "db:create": "wrangler d1 create labs-database",
+    "db:init": "wrangler d1 execute labs-database --local --file=./schema.sql",
+    "db:init:remote": "wrangler d1 execute labs-database --remote --file=./schema.sql"
+  },
+  "keywords": [
+    "cloudflare",
+    "worker",
+    "d1",
+    "labs",
+    "api"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20241127.0",
+    "typescript": "^5.7.2",
+    "wrangler": "^4.45.4"
+  }
+}
