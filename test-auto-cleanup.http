@@ -1,0 +1,206 @@
+###
+### Testing Automatic Cleanup Feature
+### Use REST Client extension in VS Code
+###
+
+@baseUrl = https://cloudflare-worker-labs-service.konami9889.workers.dev
+# @baseUrl = http://localhost:8787
+
+### 1. Health Check
+GET {{baseUrl}}/health
+
+###
+### Test 1: Create session with 1-minute duration (quick test)
+###
+
+### Create short-duration session
+POST {{baseUrl}}/api/v1/labs/sessions
+Content-Type: application/json
+
+{
+  "labId": "auto-cleanup-test-001",
+  "labTitle": "Auto Cleanup Test - 1 Minute",
+  "labGroupID": "test-group-001",
+  "moduleID": "test-module-001",
+  "duration": 1,
+  "activatedAt": "{{$datetime iso8601}}",
+  "counterID": "counter-auto-test",
+  "configId": "config-auto-test",
+  "workerConfigId": "worker-config-auto-test",
+  "lab_request_id": "auto-cleanup-lab-{{$randomInt 1000 9999}}",
+  "user_id": "auto-cleanup-user-{{$randomInt 1000 9999}}",
+  "terminal_url": "https://terminal.test.example.com",
+  "validation": 0,
+  "vm": {
+    "name": "auto-cleanup-vm",
+    "network_id": "net-auto-test",
+    "netbird_ip": "100.64.0.100"
+  }
+}
+
+### Get the session (save user_id from above)
+@testUserId = auto-cleanup-user-1234
+GET {{baseUrl}}/api/v1/labs/sessions/user/{{testUserId}}
+
+### Wait 1 minute, then check if session is auto-deleted
+# After 1 minute, this should return 404
+GET {{baseUrl}}/api/v1/labs/sessions/user/{{testUserId}}
+
+###
+### Test 2: Create session with 5-minute duration, then manually delete
+###
+
+### Create session with 5-minute duration
+POST {{baseUrl}}/api/v1/labs/sessions
+Content-Type: application/json
+
+{
+  "labId": "manual-delete-test-001",
+  "labTitle": "Manual Delete Test - 5 Minutes",
+  "labGroupID": "test-group-002",
+  "moduleID": "test-module-002",
+  "duration": 5,
+  "activatedAt": "{{$datetime iso8601}}",
+  "counterID": "counter-manual-test",
+  "configId": "config-manual-test",
+  "workerConfigId": "worker-config-manual-test",
+  "lab_request_id": "manual-delete-lab-{{$randomInt 1000 9999}}",
+  "user_id": "manual-delete-user-{{$randomInt 1000 9999}}",
+  "terminal_url": "https://terminal.test.example.com",
+  "validation": 0,
+  "vm": {
+    "name": "manual-delete-vm",
+    "network_id": "net-manual-test",
+    "netbird_ip": "100.64.0.200"
+  }
+}
+
+### Manually delete before 5 minutes expire (should cancel alarm)
+@manualDeleteUserId = manual-delete-user-5678
+DELETE {{baseUrl}}/api/v1/labs/sessions/{{manualDeleteUserId}}
+
+### Verify deletion was successful
+GET {{baseUrl}}/api/v1/labs/sessions/user/{{manualDeleteUserId}}
+
+###
+### Test 3: Create session with realistic 60-minute duration
+###
+
+### Create production-like session
+POST {{baseUrl}}/api/v1/labs/sessions
+Content-Type: application/json
+
+{
+  "labId": "68c455e6a5fbc303e31d428b",
+  "labTitle": "NETWORK NAMESPACE INSPECTING (K8S)",
+  "labGroupID": "68c455c0a5fbc303e31d4269",
+  "moduleID": "68c455e6a5fbc303e31d4287",
+  "duration": 60,
+  "activatedAt": "{{$datetime iso8601}}",
+  "counterID": "68c455e6a5fbc303e31d428b",
+  "configId": "e8ceb72a-f12b-4565-a0fe-49bfd49wkf14",
+  "workerConfigId": "e8ceb72a-f12b-4565-a0fe-49bfd49wkf15",
+  "lab_request_id": "production-lab-{{$randomInt 1000 9999}}",
+  "user_id": "production-user-{{$randomInt 1000 9999}}",
+  "terminal_url": "https://{{$guid}}.terminal-stag.poridhi.io",
+  "validation": 1762412611563,
+  "vscode_domain": "{{$guid}}.vscode-stag.poridhi.io",
+  "puku_domain": "{{$guid}}.puku-editor-stag.poridhi.io",
+  "vm": {
+    "name": "k3s-master-1-{{$guid}}",
+    "network_id": "{{$guid}}",
+    "netbird_ip": "100.125.174.16"
+  },
+  "worker_nodes": [
+    {
+      "name": "k3s-worker-{{$guid}}",
+      "worker_lab_request_id": "{{$guid}}",
+      "network_id": "{{$guid}}",
+      "netbird_ip": "100.125.42.245"
+    }
+  ],
+  "loadBalancers": [
+    {
+      "id": "{{$randomInt 10000000 99999999}}",
+      "domain": "{{$guid}}.lb-stag.poridhi.io",
+      "port": "4000"
+    }
+  ]
+}
+
+### Check production session
+@prodUserId = production-user-9999
+GET {{baseUrl}}/api/v1/labs/sessions/user/{{prodUserId}}
+
+###
+### Test 4: Error scenarios
+###
+
+### Try to create second session for same user (should fail - one lab per user)
+POST {{baseUrl}}/api/v1/labs/sessions
+Content-Type: application/json
+
+{
+  "labId": "duplicate-test",
+  "labTitle": "Duplicate Session Test",
+  "labGroupID": "test-group-003",
+  "moduleID": "test-module-003",
+  "duration": 10,
+  "activatedAt": "{{$datetime iso8601}}",
+  "counterID": "counter-dup-test",
+  "configId": "config-dup-test",
+  "workerConfigId": "worker-config-dup-test",
+  "lab_request_id": "dup-lab-{{$randomInt 1000 9999}}",
+  "user_id": "auto-cleanup-user-1234",
+  "terminal_url": "https://terminal.test.example.com",
+  "validation": 0,
+  "vm": {
+    "name": "dup-vm",
+    "network_id": "net-dup-test",
+    "netbird_ip": "100.64.0.300"
+  }
+}
+
+### Try to delete non-existent session
+DELETE {{baseUrl}}/api/v1/labs/sessions/non-existent-user-999
+
+###
+### Monitoring commands (run in terminal)
+###
+
+# Watch logs in real-time:
+# npm run tail
+
+# List all deployments:
+# npm run deployments
+
+# List configured secrets:
+# npm run secret:list
+
+# Check D1 database for active sessions:
+# npx wrangler d1 execute labs-database --remote --command "SELECT user_id, lab_request_id, duration, datetime(created_at, '+' || duration || ' minutes') as expires_at FROM labs_sessions"
+
+# Check for expired sessions:
+# npx wrangler d1 execute labs-database --remote --command "SELECT user_id, lab_request_id, duration, CASE WHEN datetime(created_at, '+' || duration || ' minutes') < datetime('now') THEN 'EXPIRED' ELSE 'ACTIVE' END as status FROM labs_sessions"
+
+###
+### Expected Log Output for Automatic Cleanup
+###
+
+# When alarm fires after duration expires, you should see:
+# [SessionManager] Alarm triggered for user auto-cleanup-user-1234, lab auto-cleanup-lab-5678
+# [SessionManager] Calling backend API to delete resources for user auto-cleanup-user-1234
+# [SessionManager] Deleting exposed services for lab auto-cleanup-lab-5678
+# [SessionManager] ✅ Exposed services deleted
+# [SessionManager] Deleting VM for lab auto-cleanup-lab-5678
+# [SessionManager] ✅ VM deleted successfully
+# [SessionManager] ✅ Database entry deleted for user auto-cleanup-user-1234
+# [SessionManager] ✅ Successfully cleaned up expired session for user auto-cleanup-user-1234
+
+###
+### Expected Log Output for Manual Cancellation
+###
+
+# When user manually deletes session:
+# [Handler] Automatic cleanup cancelled: { success: true, user_id: "manual-delete-user-5678" }
+# Session deleted from database

@@ -266,7 +266,41 @@ Content-Type: application/json
 
 ---
 
-## 4. Health Check
+## 4. Delete Lab Session
+
+### Request
+```http
+DELETE /api/v1/labs/sessions/:user_id
+```
+
+### Example
+```bash
+DELETE /api/v1/labs/sessions/675993586c0850de6534d90d
+```
+
+### Success Response (200 OK)
+```json
+{
+  "success": true,
+  "message": "Lab session deleted successfully",
+  "data": {
+    "user_id": "675993586c0850de6534d90d",
+    "deleted": true
+  }
+}
+```
+
+### Error Response (404 Not Found)
+```json
+{
+  "success": false,
+  "error": "No active lab session found for this user"
+}
+```
+
+---
+
+## 5. Health Check
 
 ### Request
 ```http
@@ -308,6 +342,11 @@ curl -X PUT http://localhost:8787/api/v1/labs/sessions/675993586c0850de6534d90d 
   }'
 ```
 
+### Delete Session
+```bash
+curl -X DELETE http://localhost:8787/api/v1/labs/sessions/675993586c0850de6534d90d
+```
+
 ### Health Check
 ```bash
 curl http://localhost:8787/health
@@ -343,6 +382,12 @@ Invoke-RestMethod -Method Put `
   -Uri "http://localhost:8787/api/v1/labs/sessions/675993586c0850de6534d90d" `
   -ContentType "application/json" `
   -Body $updateBody
+```
+
+### Delete Session
+```powershell
+Invoke-RestMethod -Method Delete `
+  -Uri "http://localhost:8787/api/v1/labs/sessions/675993586c0850de6534d90d"
 ```
 
 ### Health Check
