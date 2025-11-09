@@ -3,8 +3,8 @@
 ### Use VS Code REST Client extension or similar tools
 
 ### Variables
-@baseUrl = http://localhost:8787
-# @baseUrl = https://cloudflare-worker-labs-service.your-subdomain.workers.dev
+# @baseUrl = http://localhost:8787
+@baseUrl = https://cloudflare-worker-labs-service.konami9889.workers.dev
 @userId = 675993586c0850de6534d90d
 @contentType = application/json
 
@@ -79,7 +79,7 @@ Content-Type: {{contentType}}
   "configId": "config-001",
   "workerConfigId": "worker-config-001",
   "lab_request_id": "request-001",
-  "user_id": "user-minimal-test",
+  "user_id": "{{userId}}",
   "terminal_url": "https://terminal.example.com",
   "validation": 1234567890,
   "vm": {
@@ -246,6 +246,19 @@ Content-Type: {{contentType}}
 {}
 
 ###############################################
+# Delete Lab Session (DELETE)
+###############################################
+
+### Delete Lab Session by User ID
+DELETE {{baseUrl}}/api/v1/labs/sessions/{{userId}}
+
+### Delete Lab Session - Different User
+DELETE {{baseUrl}}/api/v1/labs/sessions/user-minimal-test
+
+### Delete Lab Session - Should Fail (User Not Found)
+DELETE {{baseUrl}}/api/v1/labs/sessions/nonexistent-user-id
+
+###############################################
 # Complete Workflow Test
 ###############################################
 
@@ -318,9 +331,6 @@ GET {{baseUrl}}/health
 
 ### Invalid Endpoint (404)
 GET {{baseUrl}}/api/v1/invalid/endpoint
-
-### Invalid Method (404)
-DELETE {{baseUrl}}/api/v1/labs/sessions/{{userId}}
 
 ### Invalid JSON
 POST {{baseUrl}}/api/v1/labs/sessions

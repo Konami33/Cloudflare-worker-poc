@@ -6,7 +6,7 @@
  */
 
 import { Env } from './types';
-import { createLabSession, getLabSession, updateLabSession } from './handlers';
+import { createLabSession, getLabSession, updateLabSession, deleteLabSession } from './handlers';
 import { errorResponse, handleCORS } from './utils';
 
 export default {
@@ -40,6 +40,13 @@ export default {
         return await updateLabSession(userId, request, env);
       }
 
+      // Route: DELETE /api/v1/labs/sessions/:user_id - Delete lab session
+      const deleteUserMatch = path.match(/^\/api\/v1\/labs\/sessions\/([^\/]+)$/);
+      if (deleteUserMatch && method === 'DELETE') {
+        const userId = deleteUserMatch[1];
+        return await deleteLabSession(userId, env);
+      }
+
       // Health check endpoint
       if (path === '/health' && method === 'GET') {
         return new Response(JSON.stringify({ 
@@ -71,6 +78,11 @@ export default {
               method: 'PUT',
               path: '/api/v1/labs/sessions/:user_id',
               description: 'Update an existing lab session'
+            },
+            {
+              method: 'DELETE',
+              path: '/api/v1/labs/sessions/:user_id',
+              description: 'Delete (terminate) a lab session'
             },
             {
               method: 'GET',

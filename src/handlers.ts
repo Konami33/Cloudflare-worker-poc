@@ -262,3 +262,47 @@ export async function updateLabSession(
     return errorResponse(`Failed to update lab session: ${error.message}`, 500);
   }
 }
+
+/**
+ * DELETE /api/v1/labs/sessions/:user_id
+ * Delete (terminate) a lab session for a given user
+ */
+export async function deleteLabSession(
+  userId: string,
+  env: Env
+): Promise<Response> {
+  try {
+    if (!userId) {
+      return errorResponse('User ID is required', 400);
+    }
+
+    // Check if session exists
+    const existingSession = await env.DB.prepare(
+      'SELECT id, labTitle FROM labs_sessions WHERE user_id = ?'
+    )
+      .bind(userId)
+      .first();
+
+    if (!existingSession) {
+      return errorResponse('No active lab session found for this user', 404);
+    }
+
+    // Delete the session
+    await env.DB.prepare(
+      'DELETE FROM labs_sessions WHERE user_id = ?'
+    )
+      .bind(userId)
+      .run();
+
+    return successResponse(
+      {
+        user_id: userId,
+        deleted: true,
+      },
+      'Lab session deleted successfully'
+    );
+  } catch (error: any) {
+    console.error('Error deleting lab session:', error);
+    return errorResponse(`Failed to delete lab session: ${error.message}`, 500);
+  }
+}
