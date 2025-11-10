@@ -67,17 +67,22 @@ When the alarm fires (lab duration expires):
 
 ```typescript
 async alarm() {
-  // Step 1: Delete exposed services (best effort)
+  // Build array of all VMs (master + worker nodes for Kubernetes labs)
+  const allLabRequestIds = [master_lab_request_id, ...worker_lab_request_ids]
+  
+  // Step 1: Delete exposed services for master VM only (best effort)
   await fetch(`${BACKEND_API_URL}/api/v1/expose/`, {
     method: 'DELETE',
-    body: JSON.stringify({ lab_request_id })
+    body: JSON.stringify({ lab_request_id: master_lab_request_id })
   })
   
-  // Step 2: Delete VM (critical)
-  await fetch(`${BACKEND_API_URL}/api/v1/labs/delete`, {
-    method: 'POST',
-    body: JSON.stringify({ lab_request_id, user_id })
-  })
+  // Step 2: Delete all VMs (master + workers) in loop (critical)
+  for (const lab_request_id of allLabRequestIds) {
+    await fetch(`${BACKEND_API_URL}/api/v1/labs/delete`, {
+      method: 'POST',
+      body: JSON.stringify({ lab_request_id, user_id })
+    })
+  }
   
   // Step 3: Delete from D1 database
   await DB.prepare('DELETE FROM labs_sessions WHERE user_id = ?').run()
@@ -101,6 +106,38 @@ DELETE FROM labs_sessions WHERE user_id = ?
 
 // 3. Frontend handles calling backend API for immediate VM deletion
 ```
+
+### 4. Multi-Node Kubernetes Lab Support
+
+The system automatically handles both single VM labs and multi-node Kubernetes labs:
+
+**Single VM Lab:**
+- 1 master VM with `lab_request_id`
+- Services exposed on master VM only
+- Simple cleanup: delete services → delete VM
+
+**Kubernetes Lab (Multi-Node):**
+- 1 master VM with `lab_request_id`
+- N worker VMs, each with `worker_lab_request_id`
+- Services exposed on master VM only
+- Complex cleanup: delete services (master only) → delete all VMs (master + workers)
+
+**Example Kubernetes Lab Session:**
+```json
+{
+  "lab_request_id": "master-abc-123",
+  "worker_nodes": [
+    { "worker_lab_request_id": "worker-1-def-456", ... },
+    { "worker_lab_request_id": "worker-2-ghi-789", ... }
+  ]
+}
+```
+
+**Cleanup Flow:**
+1. Extract all lab_request_ids: `["master-abc-123", "worker-1-def-456", "worker-2-ghi-789"]`
+2. Delete services for master VM only: `master-abc-123`
+3. Delete all VMs in sequence: master → worker-1 → worker-2
+4. If any VM deletion fails, retry entire cleanup after 5 minutes
 
 ## Configuration
 

@@ -13,7 +13,7 @@ CREATE TABLE labs_sessions (
     activatedAt TEXT NOT NULL,          -- ISO 8601 timestamp when lab was activated
     counterID TEXT NOT NULL,            -- Internal counter ID
     configId TEXT NOT NULL,             -- Config ID for the lab
-    workerConfigId TEXT NOT NULL,       -- Config ID specific to worker setup
+    workerConfigId TEXT,       -- Config ID specific to worker setup
     lab_request_id TEXT NOT NULL,       -- Unique request ID for the lab
     user_id TEXT NOT NULL UNIQUE,       -- User ID (enforces one active lab per user)
     terminal_url TEXT NOT NULL,         -- URL for the user's terminal

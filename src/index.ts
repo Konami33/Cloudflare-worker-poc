@@ -2,12 +2,16 @@
  * Cloudflare Worker - Lab Sessions API
  * 
  * Main entry point for the lab state management service.
- * Handles routing for POST, GET, and PUT endpoints.
+ * Handles routing for POST, GET, PUT, and DELETE endpoints.
+ * Includes Durable Object for automatic lab session expiration.
  */
 
 import { Env } from './types';
 import { createLabSession, getLabSession, updateLabSession, deleteLabSession } from './handlers';
 import { errorResponse, handleCORS } from './utils';
+
+// Export Durable Object class
+export { SessionManager } from './durable-objects/SessionManager';
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
@@ -44,7 +48,7 @@ export default {
       const deleteUserMatch = path.match(/^\/api\/v1\/labs\/sessions\/([^\/]+)$/);
       if (deleteUserMatch && method === 'DELETE') {
         const userId = deleteUserMatch[1];
-        return await deleteLabSession(userId, env);
+        return await deleteLabSession(userId, env); 
       }
 
       // Health check endpoint

@@ -93,7 +93,7 @@ export function rowToLabSession(row: LabSessionRow): LabSession {
     activatedAt: row.activatedAt,
     counterID: row.counterID,
     configId: row.configId,
-    workerConfigId: row.workerConfigId,
+    workerConfigId: row.workerConfigId || undefined,
     lab_request_id: row.lab_request_id,
     user_id: row.user_id,
     terminal_url: row.terminal_url,

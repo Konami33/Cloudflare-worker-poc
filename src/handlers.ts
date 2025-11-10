@@ -113,6 +113,34 @@ export async function createLabSession(
       )
       .run();
 
+    // Schedule automatic cleanup using Durable Object
+    try {
+      const doId = env.SESSION_MANAGER.idFromName(body.user_id);
+      const doStub = env.SESSION_MANAGER.get(doId);
+      
+      // Extract worker_lab_request_ids from worker_nodes if present
+      const worker_lab_request_ids = body.worker_nodes 
+        ? body.worker_nodes.map(node => node.worker_lab_request_id)
+        : [];
+      
+      const scheduleResponse = await doStub.fetch('https://do-host/schedule', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_id: body.user_id,
+          lab_request_id: body.lab_request_id,
+          worker_lab_request_ids,
+          duration: body.duration
+        })
+      });
+
+      const scheduleData = await scheduleResponse.json();
+      console.log('[Handler] Automatic cleanup scheduled:', scheduleData);
+    } catch (scheduleError: any) {
+      console.error('[Handler] Failed to schedule automatic cleanup:', scheduleError);
+      // Don't fail the request if scheduling fails - session is still created
+    }
+
     // Return created session
     return successResponse(
       {
@@ -287,7 +315,24 @@ export async function deleteLabSession(
       return errorResponse('No active lab session found for this user', 404);
     }
 
-    // Delete the session
+    // Cancel scheduled automatic cleanup using Durable Object
+    try {
+      const doId = env.SESSION_MANAGER.idFromName(userId);
+      const doStub = env.SESSION_MANAGER.get(doId);
+      
+      const cancelResponse = await doStub.fetch('https://do-host/cancel', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      const cancelData = await cancelResponse.json();
+      console.log('[Handler] Automatic cleanup cancelled:', cancelData);
+    } catch (cancelError: any) {
+      console.error('[Handler] Failed to cancel automatic cleanup:', cancelError);
+      // Continue with deletion even if cancellation fails
+    }
+
+    // Delete the session from database
     await env.DB.prepare(
       'DELETE FROM labs_sessions WHERE user_id = ?'
     )

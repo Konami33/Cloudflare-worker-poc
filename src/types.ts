@@ -35,7 +35,7 @@ export interface LabSession {
   activatedAt: string;  // ISO 8601 timestamp
   counterID: string;
   configId: string;
-  workerConfigId: string;
+  workerConfigId?: string;
   lab_request_id: string;
   user_id: string;
   terminal_url: string;
@@ -58,7 +58,7 @@ export interface LabSessionRow {
   activatedAt: string;
   counterID: string;
   configId: string;
-  workerConfigId: string;
+  workerConfigId: string | null;
   lab_request_id: string;
   user_id: string;
   terminal_url: string;
@@ -75,7 +75,10 @@ export interface LabSessionRow {
 // Cloudflare Worker environment bindings
 export interface Env {
   DB: any;  // D1Database type will be available at runtime
+  SESSION_MANAGER: DurableObjectNamespace;  // Durable Object for session management
   ENVIRONMENT?: string;
+  BACKEND_API_URL?: string;  // Backend API base URL
+  BACKEND_API_TOKEN?: string;  // Backend API authentication token
 }
 
 // API Response structure

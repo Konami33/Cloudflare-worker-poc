@@ -6,13 +6,27 @@ compatibility_date = "2024-11-06"
 [[d1_databases]]
 binding = "DB"
 database_name = "labs-database"
-database_id = "8717224e-bc40-43b5-b564-e36204779191"  # This will be populated after creating the database
+database_id = "8717224e-bc40-43b5-b564-e36204779191"
 
-# Environment Variables (optional)
+# Durable Objects Configuration
+[[durable_objects.bindings]]
+name = "SESSION_MANAGER"
+class_name = "SessionManager"
+
+# Durable Objects Migration
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["SessionManager"]
+
+# Environment Variables
 [vars]
 ENVIRONMENT = "development"
+# BACKEND_API_URL will be set via secrets or vars below
+# BACKEND_API_TOKEN will be set via secrets (use: npx wrangler secret put BACKEND_API_TOKEN)
 
 # Production Environment
 [env.production]
 [env.production.vars]
 ENVIRONMENT = "production"
+# Set production BACKEND_API_URL here or via secrets
+# BACKEND_API_URL = "https://your-production-backend.com"

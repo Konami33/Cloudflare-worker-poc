@@ -7,9 +7,27 @@ A Cloudflare Worker service that manages cloud lab state information using D1 Da
 - **RESTful API** for lab session management
 - **D1 Database** integration for persistent storage
 - **One active lab per user** enforcement
+- **Automatic session cleanup** when lab duration expires (Durable Objects)
+- **Backend integration** for VM and service deletion
 - **JSON storage** for complex objects (VM, worker nodes, load balancers)
 - **TypeScript** for type safety
 - **CORS support** for cross-origin requests
+
+## ⏰ Automatic Cleanup
+
+When a lab session is created, the worker automatically schedules cleanup based on the `duration` field:
+
+1. **Timer starts** when session is created
+2. **Alarm fires** when lab duration expires
+3. **Backend API called** to delete VMs and services
+4. **Database entry removed** from D1
+5. **Resources cleaned up** automatically
+
+**Manual deletion** (via DELETE endpoint) cancels the automatic cleanup timer.
+
+> 📖 **See [AUTOMATIC_CLEANUP.md](./AUTOMATIC_CLEANUP.md)** for detailed documentation
+> 
+> 🚀 **See [SETUP_AUTO_CLEANUP.md](./SETUP_AUTO_CLEANUP.md)** for quick setup guide
 
 ## 🗄️ Database Schema
 
@@ -154,7 +172,32 @@ Content-Type: application/json
 }
 ```
 
-### 4. Health Check
+### 4. Delete Lab Session
+```http
+DELETE /api/v1/labs/sessions/:user_id
+```
+
+**Success Response (200 OK):**
+```json
+{
+  "success": true,
+  "message": "Lab session deleted successfully",
+  "data": {
+    "user_id": "675993586c0850de6534d90d",
+    "deleted": true
+  }
+}
+```
+
+**Error Response (404 Not Found):**
+```json
+{
+  "success": false,
+  "error": "No active lab session found for this user"
+}
+```
+
+### 5. Health Check
 ```http
 GET /health
 ```
@@ -219,13 +262,35 @@ npm run db:init:remote
 
 ## 🚀 Development
 
-### Run Locally
+### Option 1: Run Locally
 
 ```bash
 npm run dev
 ```
 
 This starts a local development server at `http://localhost:8787`
+
+**Note for Windows users:** Use `npx wrangler dev --remote` to avoid local D1 issues.
+
+### Option 2: Run with Docker 🐳
+
+For a consistent development environment across all platforms:
+
+```bash
+# Using Docker Compose (recommended)
+docker-compose up --build
+
+# Or run in background
+docker-compose up -d
+```
+
+See [DOCKER.md](DOCKER.md) for complete Docker setup guide.
+
+**Benefits of Docker:**
+- ✅ Consistent environment across all platforms
+- ✅ Avoids Windows-specific Wrangler issues
+- ✅ Isolated dependencies
+- ✅ Hot reload for code changes
 
 ### Test the API
 
@@ -330,7 +395,15 @@ cloudflare-worker-poc/
 ├── wrangler.toml         # Cloudflare Worker configuration
 ├── package.json          # Dependencies and scripts
 ├── tsconfig.json         # TypeScript configuration
-└── README.md             # This file
+├── Dockerfile            # Docker configuration
+├── docker-compose.yml    # Docker Compose setup
+├── test-api.http         # HTTP test file
+├── test-data.json        # Sample test data
+├── README.md             # Main documentation
+├── QUICKSTART.md         # Quick start guide
+├── DOCKER.md             # Docker setup guide
+├── WINDOWS_SETUP.md      # Windows-specific guide
+└── API_EXAMPLES.md       # API examples
 ```
 
 ## 🔒 Business Logic

@@ -6,6 +6,9 @@
 @baseUrl = https://cloudflare-worker-labs-service.konami9889.workers.dev
 # @baseUrl = http://localhost:8787
 
+### API Documentation (Root)
+GET {{baseUrl}}/
+
 ### 1. Health Check
 GET {{baseUrl}}/health
 
@@ -14,37 +17,61 @@ GET {{baseUrl}}/health
 ###
 
 ### Create short-duration session
+@labRequestId = bddb1d3a-0203-47df-8929-9d9be93101b3
+@userId = 675993586c0850de6534d90d
 POST {{baseUrl}}/api/v1/labs/sessions
 Content-Type: application/json
 
 {
-  "labId": "auto-cleanup-test-001",
-  "labTitle": "Auto Cleanup Test - 1 Minute",
-  "labGroupID": "test-group-001",
-  "moduleID": "test-module-001",
-  "duration": 1,
-  "activatedAt": "{{$datetime iso8601}}",
-  "counterID": "counter-auto-test",
-  "configId": "config-auto-test",
-  "workerConfigId": "worker-config-auto-test",
-  "lab_request_id": "auto-cleanup-lab-{{$randomInt 1000 9999}}",
-  "user_id": "auto-cleanup-user-{{$randomInt 1000 9999}}",
-  "terminal_url": "https://terminal.test.example.com",
-  "validation": 0,
+  "labId": "68f7b43f0aa93fd5da892aa7",
+  "labTitle": "puku-k3s",
+  "labGroupID": "68c455c0a5fbc303e31d4269",
+  "moduleID": "68c455e6a5fbc303e31d4287",
+  "duration": 2,
+  "activatedAt": "2025-11-10T14:43:12.359Z",
+  "counterID": "68f7b43f0aa93fd5da892aa7",
+  "configId": "97742302-6ddc-4d04-ad5b-c71763bece37",
+  "workerConfigId": "b3140414-8847-42cb-a215-d866690e6e42",
+  "lab_request_id": "7738b756-5032-4dfe-ae44-394dcbac7f49",
+  "user_id": "675993586c0850de6534d90d",
+  "terminal_url": "https://675993586c0850de6534d90d_f8a97174.terminal-stag.poridhi.io",
+  "vscode_domain": "{{$guid}}.vscode-stag.poridhi.io",
+  "puku_domain": "{{$guid}}.puku-editor-stag.poridhi.io",
   "vm": {
-    "name": "auto-cleanup-vm",
-    "network_id": "net-auto-test",
-    "netbird_ip": "100.64.0.100"
-  }
+    "name": "k3s-master-1-7738b756-24d27a",
+    "network_id": "e7322e6d-6260-4bbd-827b-9efe02e4c3ef",
+    "netbird_ip": "100.125.28.11"
+  },
+  "validation": 1762787592367,
+  "worker_nodes": [
+    {
+      "name": "k3s-worker-0d02eb61-2a50a0",
+      "worker_lab_request_id": "0d02eb61-c74f-46e4-bc38-1af4a24ef8af",
+      "network_id": "e7322e6d-6260-4bbd-827b-9efe02e4c3ef",
+      "netbird_ip": "100.125.243.1"
+    },
+    {
+      "name": "k3s-worker-0d02eb61-97e319",
+      "worker_lab_request_id": "0d02eb61-c74f-46e4-bc38-1af4a24ef8af",
+      "network_id": "e7322e6d-6260-4bbd-827b-9efe02e4c3ef",
+      "netbird_ip": "100.125.28.251"
+    },
+    {
+      "name": "k3s-worker-0c5b0a24-7de881",
+      "worker_lab_request_id": "0c5b0a24-a5a8-489d-8105-95edca4805fb",
+      "network_id": "e7322e6d-6260-4bbd-827b-9efe02e4c3ef",
+      "netbird_ip": "100.125.96.20"
+    }
+  ]
 }
 
 ### Get the session (save user_id from above)
-@testUserId = auto-cleanup-user-1234
-GET {{baseUrl}}/api/v1/labs/sessions/user/{{testUserId}}
+@testUserId = 675993586c0850de6534d90d
+GET {{baseUrl}}/api/v1/labs/sessions/user/{{userId}}
 
 ### Wait 1 minute, then check if session is auto-deleted
 # After 1 minute, this should return 404
-GET {{baseUrl}}/api/v1/labs/sessions/user/{{testUserId}}
+GET {{baseUrl}}/api/v1/labs/sessions/user/{{userId}}
 
 ###
 ### Test 2: Create session with 5-minute duration, then manually delete
@@ -76,7 +103,7 @@ Content-Type: application/json
 }
 
 ### Manually delete before 5 minutes expire (should cancel alarm)
-@manualDeleteUserId = manual-delete-user-5678
+@manualDeleteUserId = 675993586c0850de6534d90d
 DELETE {{baseUrl}}/api/v1/labs/sessions/{{manualDeleteUserId}}
 
 ### Verify deletion was successful
