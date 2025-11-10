@@ -23,46 +23,24 @@ POST {{baseUrl}}/api/v1/labs/sessions
 Content-Type: application/json
 
 {
-  "labId": "68f7b43f0aa93fd5da892aa7",
-  "labTitle": "puku-k3s",
+  "labId": "68c455e6a5fbc303e31d428b",
+  "labTitle": "NETWORK NAMESPACE INSPECTING (K8S)",
   "labGroupID": "68c455c0a5fbc303e31d4269",
   "moduleID": "68c455e6a5fbc303e31d4287",
   "duration": 2,
-  "activatedAt": "2025-11-10T14:43:12.359Z",
-  "counterID": "68f7b43f0aa93fd5da892aa7",
-  "configId": "97742302-6ddc-4d04-ad5b-c71763bece37",
-  "workerConfigId": "b3140414-8847-42cb-a215-d866690e6e42",
-  "lab_request_id": "7738b756-5032-4dfe-ae44-394dcbac7f49",
+  "activatedAt": "2025-11-10T15:57:13.677Z",
+  "counterID": "68c455e6a5fbc303e31d428b",
+  "configId": "e8ceb72a-f12b-4565-a0fe-49bfd49wkf14",
+  "workerConfigId": "e8ceb72a-f12b-4565-a0fe-49bfd49wkf15",
+  "lab_request_id": "79a7159a-4086-4527-a255-19c24d63446a",
   "user_id": "675993586c0850de6534d90d",
-  "terminal_url": "https://675993586c0850de6534d90d_f8a97174.terminal-stag.poridhi.io",
-  "vscode_domain": "{{$guid}}.vscode-stag.poridhi.io",
-  "puku_domain": "{{$guid}}.puku-editor-stag.poridhi.io",
+  "terminal_url": "https://675993586c0850de6534d90d_2f2689c2.terminal-stag.poridhi.io",
   "vm": {
-    "name": "k3s-master-1-7738b756-24d27a",
-    "network_id": "e7322e6d-6260-4bbd-827b-9efe02e4c3ef",
-    "netbird_ip": "100.125.28.11"
+    "name": "k3s-master-1-79a7159a-6810d3",
+    "network_id": "19bf13db-f249-4bf0-99ee-5974cbf4aa9c",
+    "netbird_ip": "100.125.48.48"
   },
-  "validation": 1762787592367,
-  "worker_nodes": [
-    {
-      "name": "k3s-worker-0d02eb61-2a50a0",
-      "worker_lab_request_id": "0d02eb61-c74f-46e4-bc38-1af4a24ef8af",
-      "network_id": "e7322e6d-6260-4bbd-827b-9efe02e4c3ef",
-      "netbird_ip": "100.125.243.1"
-    },
-    {
-      "name": "k3s-worker-0d02eb61-97e319",
-      "worker_lab_request_id": "0d02eb61-c74f-46e4-bc38-1af4a24ef8af",
-      "network_id": "e7322e6d-6260-4bbd-827b-9efe02e4c3ef",
-      "netbird_ip": "100.125.28.251"
-    },
-    {
-      "name": "k3s-worker-0c5b0a24-7de881",
-      "worker_lab_request_id": "0c5b0a24-a5a8-489d-8105-95edca4805fb",
-      "network_id": "e7322e6d-6260-4bbd-827b-9efe02e4c3ef",
-      "netbird_ip": "100.125.96.20"
-    }
-  ]
+  "validation": 1762793833695
 }
 
 ### Get the session (save user_id from above)

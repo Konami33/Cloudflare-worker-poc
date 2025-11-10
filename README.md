@@ -7,7 +7,7 @@ A Cloudflare Worker service that manages cloud lab state information using D1 Da
 - **RESTful API** for lab session management
 - **D1 Database** integration for persistent storage
 - **One active lab per user** enforcement
-- **Automatic session cleanup** when lab duration expires (Durable Objects)
+- **Automatic session cleanup** when lab duration expires (Cron Triggers)
 - **Backend integration** for VM and service deletion
 - **JSON storage** for complex objects (VM, worker nodes, load balancers)
 - **TypeScript** for type safety
@@ -15,19 +15,19 @@ A Cloudflare Worker service that manages cloud lab state information using D1 Da
 
 ## ⏰ Automatic Cleanup
 
-When a lab session is created, the worker automatically schedules cleanup based on the `duration` field:
+The worker uses a **Cron Trigger** that runs every minute to check for expired lab sessions:
 
-1. **Timer starts** when session is created
-2. **Alarm fires** when lab duration expires
+1. **Cron runs every minute** checking for expired sessions
+2. **Query database** for sessions where `created_at + duration < NOW()`
 3. **Backend API called** to delete VMs and services
 4. **Database entry removed** from D1
 5. **Resources cleaned up** automatically
 
-**Manual deletion** (via DELETE endpoint) cancels the automatic cleanup timer.
+**Manual deletion** (via DELETE endpoint) removes the session immediately without waiting for cron.
 
-> 📖 **See [AUTOMATIC_CLEANUP.md](./AUTOMATIC_CLEANUP.md)** for detailed documentation
+> 📖 **Cron runs every 1 minute** - Sessions are cleaned up within 1 minute of expiration
 > 
-> 🚀 **See [SETUP_AUTO_CLEANUP.md](./SETUP_AUTO_CLEANUP.md)** for quick setup guide
+> 🚀 **No additional setup required** - Automatic cleanup works out of the box
 
 ## 🗄️ Database Schema
 

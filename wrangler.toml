@@ -8,15 +8,15 @@ binding = "DB"
 database_name = "labs-database"
 database_id = "8717224e-bc40-43b5-b564-e36204779191"
 
-# Durable Objects Configuration
-[[durable_objects.bindings]]
-name = "SESSION_MANAGER"
-class_name = "SessionManager"
+# Cron Trigger for automatic cleanup
+# Runs every 1 minute to check for expired sessions
+[triggers]
+crons = ["*/1 * * * *"]
 
-# Durable Objects Migration
+# Migrations - Delete Durable Objects (switching to Cron)
 [[migrations]]
-tag = "v1"
-new_sqlite_classes = ["SessionManager"]
+tag = "v2"
+deleted_classes = ["SessionManager"]
 
 # Environment Variables
 [vars]

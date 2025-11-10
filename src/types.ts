@@ -75,7 +75,6 @@ export interface LabSessionRow {
 // Cloudflare Worker environment bindings
 export interface Env {
   DB: any;  // D1Database type will be available at runtime
-  SESSION_MANAGER: DurableObjectNamespace;  // Durable Object for session management
   ENVIRONMENT?: string;
   BACKEND_API_URL?: string;  // Backend API base URL
   BACKEND_API_TOKEN?: string;  // Backend API authentication token
