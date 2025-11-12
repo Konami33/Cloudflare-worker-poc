@@ -8,10 +8,15 @@
 
 import { Env } from './types';
 import { createLabSession, getLabSession, updateLabSession, deleteLabSession } from './handlers';
-import { errorResponse, handleCORS } from './utils';
+import { errorResponse, handleCORS, authenticateRequest, unauthorizedResponse } from './utils';
+import { createLogger, initializeLogger } from './logger';
 
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+    // Initialize logger with environment
+    initializeLogger(env.ENVIRONMENT || 'production');
+    const logger = createLogger('Router');
+
     // Handle CORS preflight requests
     const corsResponse = handleCORS(request);
     if (corsResponse) return corsResponse;
@@ -21,15 +26,28 @@ export default {
     const path = url.pathname;
     const method = request.method;
 
+    // Log incoming request
+    logger.logRequest(method, path);
+
     try {
       // Route: POST /api/v1/labs/sessions - Create new lab session
       if (path === '/api/v1/labs/sessions' && method === 'POST') {
-        return await createLabSession(request, env);
+        if (!authenticateRequest(request, env.CF_WORKER_TOKEN)) {
+          logger.warn('Unauthorized POST request to create session');
+          return unauthorizedResponse('Invalid or missing authentication token');
+        }
+        const response = await createLabSession(request, env);
+        logger.logRequest(method, path, response.status);
+        return response;
       }
 
       // Route: GET /api/v1/labs/sessions/user/:user_id - Get lab session by user ID
       const getUserMatch = path.match(/^\/api\/v1\/labs\/sessions\/user\/([^\/]+)$/);
       if (getUserMatch && method === 'GET') {
+        if (!authenticateRequest(request, env.CF_WORKER_TOKEN)) {
+          logger.warn('Unauthorized GET request to retrieve session');
+          return unauthorizedResponse('Invalid or missing authentication token');
+        }
         const userId = getUserMatch[1];
         return await getLabSession(userId, env);
       }
@@ -37,13 +55,21 @@ export default {
       // Route: PUT /api/v1/labs/sessions/:user_id - Update lab session
       const updateUserMatch = path.match(/^\/api\/v1\/labs\/sessions\/([^\/]+)$/);
       if (updateUserMatch && method === 'PUT') {
+        if (!authenticateRequest(request, env.CF_WORKER_TOKEN)) {
+          logger.warn('Unauthorized PUT request to update session');
+          return unauthorizedResponse('Invalid or missing authentication token');
+        }
         const userId = updateUserMatch[1];
         return await updateLabSession(userId, request, env);
       }
 
-      // Route: DELETE /api/v1/labs/sessions/:user_id - Delete lab session
+      // Route: DELETE /api/v1/labs/sessions/:user_id - Delete lab session (Protected)
       const deleteUserMatch = path.match(/^\/api\/v1\/labs\/sessions\/([^\/]+)$/);
       if (deleteUserMatch && method === 'DELETE') {
+        if (!authenticateRequest(request, env.CF_WORKER_TOKEN)) {
+          logger.warn('Unauthorized DELETE request to delete session');
+          return unauthorizedResponse('Invalid or missing authentication token');
+        }
         const userId = deleteUserMatch[1];
         return await deleteLabSession(userId, env); 
       }
@@ -97,9 +123,10 @@ export default {
       }
 
       // No matching route
+      logger.warn('Route not found', { path, method });
       return errorResponse('Route not found', 404);
     } catch (error: any) {
-      console.error('Unhandled error:', error);
+      logger.error('Unhandled error in request handler', error);
       return errorResponse(`Internal server error: ${error.message}`, 500);
     }
   },
@@ -109,7 +136,9 @@ export default {
    * Checks for expired lab sessions and cleans them up
    */
   async scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionContext): Promise<void> {
-    console.log('[Cron] Starting scheduled cleanup check:', new Date().toISOString());
+    initializeLogger(env.ENVIRONMENT || 'production');
+    const logger = createLogger('CronJob');
+    logger.info('Starting scheduled cleanup check');
     ctx.waitUntil(cleanupExpiredSessions(env));
   }
 };
@@ -119,7 +148,12 @@ export default {
  * Called by cron trigger to check and delete expired sessions
  */
 async function cleanupExpiredSessions(env: Env): Promise<void> {
+  const logger = createLogger('CleanupService');
+  const startTime = Date.now();
+  
   try {
+    logger.logOperationStart('Expired sessions cleanup');
+    
     // Find expired sessions where created_at + duration < NOW
     const result = await env.DB.prepare(`
       SELECT 
@@ -133,11 +167,14 @@ async function cleanupExpiredSessions(env: Env): Promise<void> {
     `).all();
 
     if (!result.results || result.results.length === 0) {
-      console.log('[Cron] No expired sessions found');
+      logger.info('No expired sessions found');
       return;
     }
 
-    console.log(`[Cron] Found ${result.results.length} expired session(s)`);
+    logger.info(`Found ${result.results.length} expired session(s) to clean up`);
+
+    let successCount = 0;
+    let errorCount = 0;
 
     // Process each expired session
     for (const session of result.results) {
@@ -145,6 +182,8 @@ async function cleanupExpiredSessions(env: Env): Promise<void> {
         const user_id = session.user_id as string;
         const master_lab_request_id = session.lab_request_id as string;
         const worker_nodes_json = session.worker_nodes as string | null;
+        
+        const sessionLogger = logger.child({ user_id, lab_request_id: master_lab_request_id });
         
         // Parse worker nodes to get all lab_request_ids
         const worker_lab_request_ids: string[] = [];
@@ -159,28 +198,35 @@ async function cleanupExpiredSessions(env: Env): Promise<void> {
               });
             }
           } catch (parseError) {
-            console.warn(`[Cron] Failed to parse worker_nodes for user ${user_id}:`, parseError);
+            sessionLogger.warn('Failed to parse worker_nodes', parseError);
           }
         }
 
-        console.log(`[Cron] Processing expired session for user ${user_id}`);
+        sessionLogger.logSessionExpired(user_id, master_lab_request_id);
         
         // Call backend API to delete resources
-        await callBackendCleanup(env, master_lab_request_id, worker_lab_request_ids, user_id);
+        await callBackendCleanup(env, master_lab_request_id, worker_lab_request_ids, user_id, sessionLogger);
         
         // Delete from database
         await env.DB.prepare('DELETE FROM labs_sessions WHERE user_id = ?')
           .bind(user_id)
           .run();
         
-        console.log(`[Cron] ✅ Successfully cleaned up expired session for user ${user_id}`);
+        sessionLogger.logSessionDeleted(user_id, 'automatic');
+        successCount++;
       } catch (error) {
-        console.error(`[Cron] ❌ Failed to cleanup session ${session.user_id}:`, error);
+        errorCount++;
+        logger.child({ user_id: session.user_id as string }).error('Failed to cleanup session', error);
         // Continue with next session even if one fails
       }
     }
+
+    const duration = Date.now() - startTime;
+    logger.logCronExecution('Expired sessions cleanup', successCount + errorCount, errorCount);
+    logger.logOperationSuccess('Expired sessions cleanup', duration, { successCount, errorCount });
   } catch (error) {
-    console.error('[Cron] Scheduled cleanup failed:', error);
+    const duration = Date.now() - startTime;
+    logger.logOperationFailure('Expired sessions cleanup', error, duration);
   }
 }
 
@@ -192,7 +238,8 @@ async function callBackendCleanup(
   env: Env,
   master_lab_request_id: string,
   worker_lab_request_ids: string[],
-  user_id: string
+  user_id: string,
+  logger: any
 ): Promise<void> {
   const backendUrl = env.BACKEND_API_URL;
   const authToken = env.BACKEND_API_TOKEN;
@@ -208,11 +255,15 @@ async function callBackendCleanup(
   // Combine all lab_request_ids and remove duplicates using Set
   const allLabRequestIds = Array.from(new Set([master_lab_request_id, ...worker_lab_request_ids]));
   
-  // console.log(`[Cron] Total unique VMs to delete: ${allLabRequestIds.length}`);
+  if (allLabRequestIds.length > 1) {
+    logger.info(`Multi-node Kubernetes lab detected: ${allLabRequestIds.length} VMs to delete`);
+  }
 
   // Step 1: Delete exposed services for master VM (best effort)
   try {
-    console.log(`[Cron] Deleting exposed services for master lab ${master_lab_request_id}`);
+    const startTime = Date.now();
+    logger.info(`Deleting exposed services for master lab`, { lab_request_id: master_lab_request_id });
+    
     const servicesResponse = await fetch(`${backendUrl}/api/v1/expose/`, {
       method: 'DELETE',
       headers: {
@@ -222,14 +273,17 @@ async function callBackendCleanup(
       body: JSON.stringify({ lab_request_id: master_lab_request_id })
     });
 
+    const duration = Date.now() - startTime;
+    logger.logApiCall('DELETE', '/api/v1/expose/', servicesResponse.status, duration);
+
     if (servicesResponse.ok) {
       const servicesData = await servicesResponse.json();
-      console.log(`[Cron] ✅ Exposed services deleted:`, servicesData);
+      logger.info('Exposed services deleted successfully', servicesData);
     } else {
-      console.warn(`[Cron] ⚠️ Failed to delete exposed services (${servicesResponse.status})`);
+      logger.warn(`Failed to delete exposed services (${servicesResponse.status})`);
     }
   } catch (error) {
-    console.warn('[Cron] ⚠️ Service deletion error (continuing):', error);
+    logger.warn('Service deletion error (continuing with VM deletion)', error);
   }
 
   // Step 2: Delete all VMs (master + workers)
@@ -238,7 +292,10 @@ async function callBackendCleanup(
 
   for (const lab_request_id of allLabRequestIds) {
     try {
-      console.log(`[Cron] Deleting VM for lab ${lab_request_id}`);
+      const startTime = Date.now();
+      const vmType = lab_request_id === master_lab_request_id ? 'master' : 'worker';
+      logger.info(`Deleting ${vmType} VM`, { lab_request_id });
+      
       const vmResponse = await fetch(`${backendUrl}/api/v1/labs/delete`, {
         method: 'POST',
         headers: {
@@ -248,22 +305,25 @@ async function callBackendCleanup(
         body: JSON.stringify({ lab_request_id, user_id })
       });
 
+      const duration = Date.now() - startTime;
+      logger.logApiCall('POST', '/api/v1/labs/delete', vmResponse.status, duration);
+
       if (!vmResponse.ok) {
         const errorText = await vmResponse.text();
         throw new Error(`Backend API returned ${vmResponse.status}: ${errorText}`);
       }
 
       successfulDeletions++;
-      console.log(`[Cron] ✅ VM deleted successfully (${lab_request_id})`);
+      logger.info(`${vmType} VM deleted successfully`, { lab_request_id });
     } catch (error: any) {
-      console.error(`[Cron] ❌ VM deletion failed for ${lab_request_id}:`, error);
+      logger.error(`VM deletion failed`, { lab_request_id, error: error.message });
       vmDeleteErrors.push({ lab_request_id, error: error.toString() });
     }
   }
 
   // Report results
   if (vmDeleteErrors.length > 0) {
-    console.error(`[Cron] Failed to delete ${vmDeleteErrors.length} out of ${allLabRequestIds.length} VMs`, {
+    logger.error(`Failed to delete ${vmDeleteErrors.length} out of ${allLabRequestIds.length} VMs`, {
       total_vms: allLabRequestIds.length,
       successful_deletions: successfulDeletions,
       failed_deletions: vmDeleteErrors.length,
@@ -272,5 +332,5 @@ async function callBackendCleanup(
     throw new Error(`Failed to delete ${vmDeleteErrors.length} out of ${allLabRequestIds.length} VMs`);
   }
 
-  console.log(`[Cron] ✅ All VMs deleted successfully (${successfulDeletions}/${allLabRequestIds.length})`);
+  logger.info(`All VMs deleted successfully (${successfulDeletions}/${allLabRequestIds.length})`);
 }

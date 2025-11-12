@@ -5,11 +5,13 @@ A Cloudflare Worker service that manages cloud lab state information using D1 Da
 ## 📋 Features
 
 - **RESTful API** for lab session management
+- **Bearer Token Authentication** for secure API access
 - **D1 Database** integration for persistent storage
 - **One active lab per user** enforcement
 - **Automatic session cleanup** when lab duration expires (Cron Triggers)
 - **Backend integration** for VM and service deletion
 - **JSON storage** for complex objects (VM, worker nodes, load balancers)
+- **Systematic Logging** with structured context and levels
 - **TypeScript** for type safety
 - **CORS support** for cross-origin requests
 
@@ -45,7 +47,10 @@ Each record represents the state of a single user's active lab session. The `lab
 ```http
 POST /api/v1/labs/sessions
 Content-Type: application/json
+Authorization: Bearer YOUR_TOKEN_HERE
 ```
+
+🔒 **Requires Authentication**
 
 **Request Body:**
 ```json
@@ -111,7 +116,10 @@ Content-Type: application/json
 ### 2. Get Lab Session by User ID
 ```http
 GET /api/v1/labs/sessions/user/:user_id
+Authorization: Bearer YOUR_TOKEN_HERE
 ```
+
+🔒 **Requires Authentication**
 
 **Response (200 OK):**
 ```json
@@ -138,7 +146,10 @@ GET /api/v1/labs/sessions/user/:user_id
 ```http
 PUT /api/v1/labs/sessions/:user_id
 Content-Type: application/json
+Authorization: Bearer YOUR_TOKEN_HERE
 ```
+
+🔒 **Requires Authentication**
 
 **Request Body (partial update):**
 ```json
@@ -175,7 +186,10 @@ Content-Type: application/json
 ### 4. Delete Lab Session
 ```http
 DELETE /api/v1/labs/sessions/:user_id
+Authorization: Bearer YOUR_TOKEN_HERE
 ```
+
+🔒 **Requires Authentication**
 
 **Success Response (200 OK):**
 ```json
@@ -260,6 +274,21 @@ For production:
 npm run db:init:remote
 ```
 
+### 5. Set Up Authentication
+
+Create a secure authentication token:
+
+```bash
+# Generate a secure token
+openssl rand -base64 32
+
+# Set as Cloudflare secret
+npx wrangler secret put CF_WORKER_TOKEN
+# When prompted, paste your generated token
+```
+
+📖 **See [AUTHENTICATION.md](AUTHENTICATION.md) for complete authentication setup guide**
+
 ## 🚀 Development
 
 ### Option 1: Run Locally
@@ -340,7 +369,11 @@ wrangler deploy --env production
 
 ## 🧪 Testing
 
-You can test the API using the provided example in your request. Create a `test-data.json` file:
+You can test the API using the provided `test-api.http` file with REST Client extension, or use curl/Postman.
+
+**Important:** All CRUD endpoints require Bearer token authentication. See [AUTHENTICATION.md](AUTHENTICATION.md) for setup.
+
+Create a `test-data.json` file:
 
 ```json
 {
@@ -390,7 +423,8 @@ cloudflare-worker-poc/
 │   ├── index.ts          # Main entry point and routing
 │   ├── handlers.ts       # API endpoint handlers
 │   ├── types.ts          # TypeScript interfaces
-│   └── utils.ts          # Utility functions
+│   ├── utils.ts          # Utility functions (includes auth)
+│   └── logger.ts         # Systematic logging system
 ├── schema.sql            # D1 database schema
 ├── wrangler.toml         # Cloudflare Worker configuration
 ├── package.json          # Dependencies and scripts
@@ -400,9 +434,11 @@ cloudflare-worker-poc/
 ├── test-api.http         # HTTP test file
 ├── test-data.json        # Sample test data
 ├── README.md             # Main documentation
+├── AUTHENTICATION.md     # Authentication setup guide
 ├── QUICKSTART.md         # Quick start guide
 ├── DOCKER.md             # Docker setup guide
 ├── WINDOWS_SETUP.md      # Windows-specific guide
+├── TESTING_GUIDE.md      # Testing instructions
 └── API_EXAMPLES.md       # API examples
 ```
 

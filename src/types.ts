@@ -78,6 +78,7 @@ export interface Env {
   ENVIRONMENT?: string;
   BACKEND_API_URL?: string;  // Backend API base URL
   BACKEND_API_TOKEN?: string;  // Backend API authentication token
+  CF_WORKER_TOKEN?: string;  // Cloudflare Worker API authentication token
 }
 
 // API Response structure

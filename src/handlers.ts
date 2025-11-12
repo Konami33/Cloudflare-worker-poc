@@ -11,6 +11,7 @@ import {
   rowToLabSession,
   parseRequestBody,
 } from './utils';
+import { createLogger } from './logger';
 
 /**
  * POST /api/v1/labs/sessions
@@ -21,11 +22,17 @@ export async function createLabSession(
   request: Request,
   env: Env
 ): Promise<Response> {
+  const logger = createLogger('CreateLabSession');
+  const startTime = Date.now();
+  
   try {
+    logger.logOperationStart('Create lab session');
+    
     // Parse request body
     const body = await parseRequestBody<LabSession>(request);
     
     if (!body) {
+      logger.warn('Invalid JSON in request body');
       return errorResponse('Invalid JSON in request body', 400);
     }
 
@@ -39,7 +46,7 @@ export async function createLabSession(
       'activatedAt',
       'counterID',
       'configId',
-      'workerConfigId',
+      // 'workerConfigId',
       'lab_request_id',
       'user_id',
       'terminal_url',
@@ -49,6 +56,7 @@ export async function createLabSession(
 
     const validation = validateRequiredFields(body, requiredFields);
     if (!validation.valid) {
+      logger.warn('Missing required fields', { missing: validation.missing });
       return errorResponse(
         `Missing required fields: ${validation.missing.join(', ')}`,
         400
@@ -57,6 +65,7 @@ export async function createLabSession(
 
     // Generate UUID if not provided
     const sessionId = body.id || generateUUID();
+    const sessionLogger = logger.child({ user_id: body.user_id, session_id: sessionId });
 
     // Check if user already has an active lab
     const existingSession = await env.DB.prepare(
@@ -66,6 +75,7 @@ export async function createLabSession(
       .first();
 
     if (existingSession) {
+      sessionLogger.warn('User already has an active lab session');
       return errorResponse(
         'User already has an active lab session. Only one active lab per user is allowed.',
         409
@@ -113,7 +123,10 @@ export async function createLabSession(
       )
       .run();
 
-    // Note: Automatic cleanup is handled by cron trigger (no action needed here)
+    const duration = Date.now() - startTime;
+    sessionLogger.logSessionCreated(body.user_id, body.lab_request_id, body.duration);
+    sessionLogger.logDatabaseOperation('INSERT', 'labs_sessions', true);
+    sessionLogger.logOperationSuccess('Create lab session', duration);
 
     // Return created session
     return successResponse(
@@ -125,7 +138,8 @@ export async function createLabSession(
       201
     );
   } catch (error: any) {
-    console.error('Error creating lab session:', error);
+    const duration = Date.now() - startTime;
+    logger.logOperationFailure('Create lab session', error, duration);
     return errorResponse(`Failed to create lab session: ${error.message}`, 500);
   }
 }
@@ -138,8 +152,14 @@ export async function getLabSession(
   userId: string,
   env: Env
 ): Promise<Response> {
+  const logger = createLogger('GetLabSession', { user_id: userId });
+  const startTime = Date.now();
+  
   try {
+    logger.logOperationStart('Get lab session');
+    
     if (!userId) {
+      logger.warn('User ID is required');
       return errorResponse('User ID is required', 400);
     }
 
@@ -151,18 +171,24 @@ export async function getLabSession(
       .first();
 
     if (!result) {
+      logger.info('No active lab session found');
       return errorResponse('No active lab session found for this user', 404);
     }
 
     // Convert row to LabSession object
     const labSession = rowToLabSession(result as any);
 
+    const duration = Date.now() - startTime;
+    logger.logDatabaseOperation('SELECT', 'labs_sessions', true);
+    logger.logOperationSuccess('Get lab session', duration);
+
     return successResponse(
       labSession,
       'Lab session retrieved successfully'
     );
   } catch (error: any) {
-    console.error('Error retrieving lab session:', error);
+    const duration = Date.now() - startTime;
+    logger.logOperationFailure('Get lab session', error, duration);
     return errorResponse(`Failed to retrieve lab session: ${error.message}`, 500);
   }
 }
@@ -176,8 +202,14 @@ export async function updateLabSession(
   request: Request,
   env: Env
 ): Promise<Response> {
+  const logger = createLogger('UpdateLabSession', { user_id: userId });
+  const startTime = Date.now();
+  
   try {
+    logger.logOperationStart('Update lab session');
+    
     if (!userId) {
+      logger.warn('User ID is required');
       return errorResponse('User ID is required', 400);
     }
 
@@ -185,6 +217,7 @@ export async function updateLabSession(
     const body = await parseRequestBody<UpdateLabSessionPayload>(request);
     
     if (!body || Object.keys(body).length === 0) {
+      logger.warn('Request body cannot be empty');
       return errorResponse('Request body cannot be empty', 400);
     }
 
@@ -196,6 +229,7 @@ export async function updateLabSession(
       .first();
 
     if (!existingSession) {
+      logger.info('No active lab session found');
       return errorResponse('No active lab session found for this user', 404);
     }
 
@@ -230,8 +264,12 @@ export async function updateLabSession(
     }
 
     if (updateFields.length === 0) {
+      logger.warn('No valid fields to update');
       return errorResponse('No valid fields to update', 400);
     }
+
+    const fieldsBeingUpdated = updateFields.map(f => f.split(' =')[0]);
+    logger.info('Updating session fields', { fields: fieldsBeingUpdated });
 
     // Add updated_at timestamp
     updateFields.push("updated_at = datetime('now')");
@@ -255,12 +293,18 @@ export async function updateLabSession(
 
     const labSession = rowToLabSession(updatedSession as any);
 
+    const duration = Date.now() - startTime;
+    logger.logSessionUpdated(userId, fieldsBeingUpdated);
+    logger.logDatabaseOperation('UPDATE', 'labs_sessions', true);
+    logger.logOperationSuccess('Update lab session', duration);
+
     return successResponse(
       labSession,
       'Lab session updated successfully'
     );
   } catch (error: any) {
-    console.error('Error updating lab session:', error);
+    const duration = Date.now() - startTime;
+    logger.logOperationFailure('Update lab session', error, duration);
     return errorResponse(`Failed to update lab session: ${error.message}`, 500);
   }
 }
@@ -273,8 +317,14 @@ export async function deleteLabSession(
   userId: string,
   env: Env
 ): Promise<Response> {
+  const logger = createLogger('DeleteLabSession', { user_id: userId });
+  const startTime = Date.now();
+  
   try {
+    logger.logOperationStart('Delete lab session');
+    
     if (!userId) {
+      logger.warn('User ID is required');
       return errorResponse('User ID is required', 400);
     }
 
@@ -286,8 +336,11 @@ export async function deleteLabSession(
       .first();
 
     if (!existingSession) {
+      logger.info('No active lab session found');
       return errorResponse('No active lab session found for this user', 404);
     }
+
+    logger.info('Deleting session', { session_id: existingSession.id });
 
     // Note: Session will be cleaned up by cron if not manually deleted
     // Delete the session from database
@@ -297,6 +350,11 @@ export async function deleteLabSession(
       .bind(userId)
       .run();
 
+    const duration = Date.now() - startTime;
+    logger.logSessionDeleted(userId, 'manual');
+    logger.logDatabaseOperation('DELETE', 'labs_sessions', true);
+    logger.logOperationSuccess('Delete lab session', duration);
+
     return successResponse(
       {
         user_id: userId,
@@ -305,7 +363,8 @@ export async function deleteLabSession(
       'Lab session deleted successfully'
     );
   } catch (error: any) {
-    console.error('Error deleting lab session:', error);
+    const duration = Date.now() - startTime;
+    logger.logOperationFailure('Delete lab session', error, duration);
     return errorResponse(`Failed to delete lab session: ${error.message}`, 500);
   }
 }

@@ -28,19 +28,33 @@ Content-Type: application/json
   "labGroupID": "68c455c0a5fbc303e31d4269",
   "moduleID": "68c455e6a5fbc303e31d4287",
   "duration": 2,
-  "activatedAt": "2025-11-10T15:57:13.677Z",
+  "activatedAt": "2025-11-11T07:05:00.701Z",
   "counterID": "68c455e6a5fbc303e31d428b",
   "configId": "e8ceb72a-f12b-4565-a0fe-49bfd49wkf14",
   "workerConfigId": "e8ceb72a-f12b-4565-a0fe-49bfd49wkf15",
-  "lab_request_id": "79a7159a-4086-4527-a255-19c24d63446a",
+  "lab_request_id": "caaeccf1-2c81-4f6e-8607-e0e018d80f04",
   "user_id": "675993586c0850de6534d90d",
-  "terminal_url": "https://675993586c0850de6534d90d_2f2689c2.terminal-stag.poridhi.io",
+  "terminal_url": "https://675993586c0850de6534d90d_af1bbfd2.terminal-stag.poridhi.io",
   "vm": {
-    "name": "k3s-master-1-79a7159a-6810d3",
-    "network_id": "19bf13db-f249-4bf0-99ee-5974cbf4aa9c",
-    "netbird_ip": "100.125.48.48"
+    "name": "k3s-master-1-caaeccf1-bc203b",
+    "network_id": "e7a1680b-ce8c-489f-ad21-3279b9181c77",
+    "netbird_ip": "100.125.131.28"
   },
-  "validation": 1762793833695
+  "validation": 1762848300712,
+  "worker_nodes": [
+    {
+      "name": "k3s-worker-5e89009f-ebdd3d",
+      "worker_lab_request_id": "5e89009f-8c4e-4c37-9da7-f09396e73323",
+      "network_id": "e7a1680b-ce8c-489f-ad21-3279b9181c77",
+      "netbird_ip": "100.125.242.141"
+    },
+    {
+      "name": "k3s-worker-5e89009f-b2c973",
+      "worker_lab_request_id": "5e89009f-8c4e-4c37-9da7-f09396e73323",
+      "network_id": "e7a1680b-ce8c-489f-ad21-3279b9181c77",
+      "netbird_ip": "100.125.236.121"
+    }
+  ]
 }
 
 ### Get the session (save user_id from above)

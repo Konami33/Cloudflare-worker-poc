@@ -7,6 +7,7 @@
 @baseUrl = https://cloudflare-worker-labs-service.konami9889.workers.dev
 @userId = 675993586c0850de6534d90d
 @contentType = application/json
+@authToken = 4ad4f848ee5f211a1d8e67502f4bcc7ce7707d556049c18c5ba4c8cef59b0676
 
 ###############################################
 # Health Check & Info
@@ -22,127 +23,48 @@ GET {{baseUrl}}/
 # Create Lab Session (POST)
 ###############################################
 
-### Create New Lab Session - Full Example
+### Create New Lab Session - Full Example (Requires Authentication)
 POST {{baseUrl}}/api/v1/labs/sessions
 Content-Type: {{contentType}}
+Authorization: Bearer {{authToken}}
 
 {
-  "labId": "68c455e6a5fbc303e31d428b",
-  "labTitle": "NETWORK NAMESPACE INSPECTING (K8S)",
-  "labGroupID": "68c455c0a5fbc303e31d4269",
-  "moduleID": "68c455e6a5fbc303e31d4287",
-  "duration": 60,
-  "activatedAt": "2025-11-06T06:03:31.559Z",
-  "counterID": "68c455e6a5fbc303e31d428b",
-  "configId": "e8ceb72a-f12b-4565-a0fe-49bfd49wkf14",
-  "workerConfigId": "e8ceb72a-f12b-4565-a0fe-49bfd49wkf15",
-  "lab_request_id": "9f3077ea-8d03-44f0-a6b3-c9697b43427c",
-  "user_id": "{{userId}}",
-  "terminal_url": "https://675993586c0850de6534d90d_abb17775.terminal-stag.poridhi.io",
-  "validation": 1762412611563,
+  "labId": "67581a67fd07f8bfcaaca048",
+  "labTitle": "Setting Up a Host-Like Environment Using Docker Containers",
+  "labGroupID": "67542ed7108d71b2684c7528",
+  "moduleID": "6757d980fd07f8bfcaac8d54",
+  "duration": 10,
+  "activatedAt": "2025-11-12T13:03:47.769Z",
+  "counterID": "67581a67fd07f8bfcaaca048",
+  "configId": "382339e0-db1d-4e7e-aabc-36d658fc8ac9",
+  "workerConfigId": "Thead339e0-db1d-4e7e-aabc-36d658fc8ac9",
+  "lab_request_id": "5af57aba-e556-4dba-a161-381ac2b5a369",
+  "user_id": "675993586c0850de6534d90d",
+  "terminal_url": "https://675993586c0850de6534d90d_f853b25b.terminal-stag.poridhi.io",
   "vm": {
-    "name": "k3s-master-1-9f3077ea-8018e1",
-    "network_id": "4eeee504-a9cc-46eb-9121-32fb9dd51975",
-    "netbird_ip": "100.125.174.16"
+    "name": "vm-vm-1-5af57aba-dc18e5",
+    "network_id": "04843d58-d0b5-4b31-8e1c-647219d916b3",
+    "netbird_ip": "100.125.73.55"
   },
-  "vscode_domain": "675993586c0850de6534d90d_136ee932.vscode-stag.poridhi.io",
-  "puku_domain": "675993586c0850de6534d90d_9551ff4b.puku-editor-stag.poridhi.io",
-  "worker_nodes": [
-    {
-      "name": "k3s-worker-41516a2d-43ae1f",
-      "worker_lab_request_id": "41516a2d-8073-4601-9907-d98d8af25b25",
-      "network_id": "4eeee504-a9cc-46eb-9121-32fb9dd51975",
-      "netbird_ip": "100.125.42.245"
-    }
-  ],
-  "loadBalancers": [
-    {
-      "id": "02849259",
-      "domain": "675993586c0850de6534d90d_02849259.lb-stag.poridhi.io",
-      "port": "4000"
-    }
-  ]
-}
-
-### Create New Lab Session - Minimal Required Fields
-POST {{baseUrl}}/api/v1/labs/sessions
-Content-Type: {{contentType}}
-
-{
-  "labId": "lab-minimal-001",
-  "labTitle": "Minimal Lab Example",
-  "labGroupID": "group-001",
-  "moduleID": "module-001",
-  "duration": 30,
-  "activatedAt": "2025-11-06T10:00:00.000Z",
-  "counterID": "counter-001",
-  "configId": "config-001",
-  "workerConfigId": "worker-config-001",
-  "lab_request_id": "request-001",
-  "user_id": "{{userId}}",
-  "terminal_url": "https://terminal.example.com",
-  "validation": 1234567890,
-  "vm": {
-    "name": "master-vm-1",
-    "network_id": "net-001",
-    "netbird_ip": "100.125.1.1"
-  }
-}
-
-### Create Lab Session - Should Fail (User Already Has Active Lab)
-POST {{baseUrl}}/api/v1/labs/sessions
-Content-Type: {{contentType}}
-
-{
-  "labId": "lab-duplicate-001",
-  "labTitle": "Duplicate Lab Test",
-  "labGroupID": "group-001",
-  "moduleID": "module-001",
-  "duration": 30,
-  "activatedAt": "2025-11-06T10:00:00.000Z",
-  "counterID": "counter-001",
-  "configId": "config-001",
-  "workerConfigId": "worker-config-001",
-  "lab_request_id": "request-duplicate",
-  "user_id": "{{userId}}",
-  "terminal_url": "https://terminal.example.com",
-  "validation": 1234567890,
-  "vm": {
-    "name": "master-vm-1",
-    "network_id": "net-001",
-    "netbird_ip": "100.125.1.1"
-  }
-}
-
-### Create Lab Session - Should Fail (Missing Required Fields)
-POST {{baseUrl}}/api/v1/labs/sessions
-Content-Type: {{contentType}}
-
-{
-  "labId": "lab-invalid-001",
-  "labTitle": "Invalid Lab Test"
+  "validation": 1762957127782
 }
 
 ###############################################
 # Get Lab Session (GET)
 ###############################################
 
-### Get Lab Session by User ID
+### Get Lab Session by User ID (Requires Authentication)
 GET {{baseUrl}}/api/v1/labs/sessions/user/{{userId}}
-
-### Get Lab Session - Different User
-GET {{baseUrl}}/api/v1/labs/sessions/user/user-minimal-test
-
-### Get Lab Session - Should Fail (User Not Found)
-GET {{baseUrl}}/api/v1/labs/sessions/user/nonexistent-user-id
+Authorization: Bearer {{authToken}}
 
 ###############################################
 # Update Lab Session (PUT)
 ###############################################
 
-### Update Lab Session - Add Worker Nodes
+### Update Lab Session - Add Worker Nodes (Requires Authentication)
 PUT {{baseUrl}}/api/v1/labs/sessions/{{userId}}
 Content-Type: {{contentType}}
+Authorization: Bearer {{authToken}}
 
 {
   "worker_nodes": [
@@ -164,6 +86,7 @@ Content-Type: {{contentType}}
 ### Update Lab Session - Add Load Balancers
 PUT {{baseUrl}}/api/v1/labs/sessions/{{userId}}
 Content-Type: {{contentType}}
+Authorization: Bearer {{authToken}}
 
 {
   "loadBalancers": [
@@ -180,37 +103,12 @@ Content-Type: {{contentType}}
   ]
 }
 
-### Update Lab Session - Update Domains
+### Update Lab Session - Multiple Fields (Requires Authentication)
 PUT {{baseUrl}}/api/v1/labs/sessions/{{userId}}
 Content-Type: {{contentType}}
+Authorization: Bearer {{authToken}}
 
 {
-  "vscode_domain": "user-new-vscode.example.com",
-  "puku_domain": "user-new-puku.example.com"
-}
-
-### Update Lab Session - Update Duration
-PUT {{baseUrl}}/api/v1/labs/sessions/{{userId}}
-Content-Type: {{contentType}}
-
-{
-  "duration": 90
-}
-
-### Update Lab Session - Update Terminal URL
-PUT {{baseUrl}}/api/v1/labs/sessions/{{userId}}
-Content-Type: {{contentType}}
-
-{
-  "terminal_url": "https://new-terminal-url.example.com"
-}
-
-### Update Lab Session - Multiple Fields
-PUT {{baseUrl}}/api/v1/labs/sessions/{{userId}}
-Content-Type: {{contentType}}
-
-{
-  "duration": 120,
   "vscode_domain": "updated-vscode.example.com",
   "puku_domain": "updated-puku.example.com",
   "terminal_url": "https://updated-terminal.example.com",
@@ -231,146 +129,10 @@ Content-Type: {{contentType}}
   ]
 }
 
-### Update Lab Session - Should Fail (User Not Found)
-PUT {{baseUrl}}/api/v1/labs/sessions/nonexistent-user-id
-Content-Type: {{contentType}}
-
-{
-  "duration": 90
-}
-
-### Update Lab Session - Should Fail (Empty Body)
-PUT {{baseUrl}}/api/v1/labs/sessions/{{userId}}
-Content-Type: {{contentType}}
-
-{}
-
 ###############################################
 # Delete Lab Session (DELETE)
 ###############################################
 
-### Delete Lab Session by User ID
+### Delete Lab Session by User ID (Requires Authentication)
 DELETE {{baseUrl}}/api/v1/labs/sessions/{{userId}}
-
-### Delete Lab Session - Different User
-DELETE {{baseUrl}}/api/v1/labs/sessions/user-minimal-test
-
-### Delete Lab Session - Should Fail (User Not Found)
-DELETE {{baseUrl}}/api/v1/labs/sessions/nonexistent-user-id
-
-###############################################
-# Complete Workflow Test
-###############################################
-
-### 1. Check Health
-GET {{baseUrl}}/health
-
-### 2. Create a New Session (Change user_id for new test)
-# POST {{baseUrl}}/api/v1/labs/sessions
-# Content-Type: {{contentType}}
-# 
-# {
-#   "labId": "workflow-test-001",
-#   "labTitle": "Complete Workflow Test",
-#   "labGroupID": "group-workflow",
-#   "moduleID": "module-workflow",
-#   "duration": 60,
-#   "activatedAt": "2025-11-06T10:00:00.000Z",
-#   "counterID": "counter-workflow",
-#   "configId": "config-workflow",
-#   "workerConfigId": "worker-config-workflow",
-#   "lab_request_id": "request-workflow",
-#   "user_id": "user-workflow-test",
-#   "terminal_url": "https://terminal-workflow.example.com",
-#   "validation": 9876543210,
-#   "vm": {
-#     "name": "workflow-vm",
-#     "network_id": "net-workflow",
-#     "netbird_ip": "100.125.99.99"
-#   }
-# }
-
-### 3. Get the Created Session
-# GET {{baseUrl}}/api/v1/labs/sessions/user/user-workflow-test
-
-### 4. Update with Worker Nodes
-# PUT {{baseUrl}}/api/v1/labs/sessions/user-workflow-test
-# Content-Type: {{contentType}}
-# 
-# {
-#   "worker_nodes": [
-#     {
-#       "name": "workflow-worker-1",
-#       "worker_lab_request_id": "worker-workflow-1",
-#       "network_id": "net-workflow",
-#       "netbird_ip": "100.125.99.100"
-#     }
-#   ]
-# }
-
-### 5. Update with Load Balancers
-# PUT {{baseUrl}}/api/v1/labs/sessions/user-workflow-test
-# Content-Type: {{contentType}}
-# 
-# {
-#   "loadBalancers": [
-#     {
-#       "id": "lb-workflow-001",
-#       "domain": "workflow-app.example.com",
-#       "port": "8080"
-#     }
-#   ]
-# }
-
-### 6. Get Final State
-# GET {{baseUrl}}/api/v1/labs/sessions/user/user-workflow-test
-
-###############################################
-# Error Cases Testing
-###############################################
-
-### Invalid Endpoint (404)
-GET {{baseUrl}}/api/v1/invalid/endpoint
-
-### Invalid JSON
-POST {{baseUrl}}/api/v1/labs/sessions
-Content-Type: {{contentType}}
-
-{invalid json}
-
-### CORS Preflight
-OPTIONS {{baseUrl}}/api/v1/labs/sessions
-Origin: https://example.com
-Access-Control-Request-Method: POST
-Access-Control-Request-Headers: Content-Type
-
-###############################################
-# Production Testing
-# Uncomment and update baseUrl to production URL
-###############################################
-
-# @prodBaseUrl = https://cloudflare-worker-labs-service.your-subdomain.workers.dev
-
-### Production Health Check
-# GET {{prodBaseUrl}}/health
-
-### Production Create Session
-# POST {{prodBaseUrl}}/api/v1/labs/sessions
-# Content-Type: {{contentType}}
-# 
-# {
-#   "labId": "prod-test-001",
-#   "labTitle": "Production Test Lab",
-#   ...
-# }
-
-### Production Get Session
-# GET {{prodBaseUrl}}/api/v1/labs/sessions/user/{{userId}}
-
-### Production Update Session
-# PUT {{prodBaseUrl}}/api/v1/labs/sessions/{{userId}}
-# Content-Type: {{contentType}}
-# 
-# {
-#   "duration": 90
-# }
+Authorization: Bearer {{authToken}}
